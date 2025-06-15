@@ -1,0 +1,7 @@
+{
+  "name": "solucionamass",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
