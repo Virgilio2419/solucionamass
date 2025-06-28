@@ -1,3 +1,57 @@
 <ion-app>
-  <ion-router-outlet></ion-router-outlet>
+<ion-menu side="start" menuId="m1" contentId="main">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Soluciona+</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-list>
+        <ion-menu-toggle>
+          <ion-item button [routerLink]="['/main']">
+            <ion-label>Home</ion-label>
+          </ion-item>
+          <ion-item button [routerLink]="['/prestadores']">
+            <ion-label>Buscar Prestadores</ion-label>
+          </ion-item>
+
+          <!-- Visible solo si el usuario es prestador -->
+          <ion-item
+            button
+            [routerLink]="['/solicitudes-servicio']"
+            *ngIf="usuarioActual?.esPrestador"
+          >
+            <ion-label>Prestaciones Pendientes</ion-label>
+          </ion-item>
+
+          <ion-item button [routerLink]="['/servicios-agendados-cliente']">
+            <ion-label>Solicitudes Agendadas</ion-label>
+          </ion-item>
+
+          <ion-item button [routerLink]="['/profile']">
+            <ion-label>Mi Perfil</ion-label>
+          </ion-item>
+
+          <!-- Visible solo si el usuario es prestador -->
+          <ion-item
+            button
+            [routerLink]="['/hist-solicitudes-servicio']"
+            *ngIf="usuarioActual?.esPrestador"
+          >
+            <ion-label>Historial Prestaciones</ion-label>
+          </ion-item>
+
+          <ion-item button [routerLink]="['/hist-servicios-agendados-cliente']">
+            <ion-label>Solicitudes Históricas</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="onLogout()">
+            <ion-label>Logout</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+    </ion-content>
+  </ion-menu>
+
+  <ion-router-outlet id="main"></ion-router-outlet>
 </ion-app>

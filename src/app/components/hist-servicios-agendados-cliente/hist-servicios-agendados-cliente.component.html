@@ -1,0 +1,49 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center">Historial Servicios</ion-title>
+     <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco"/>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  
+  <!-- Filtro de búsqueda -->
+  <ion-item lines="full">
+    <ion-label position="floating">Buscar por nombre, estado o fecha</ion-label>
+    <ion-input [(ngModel)]="filtro" (ionInput)="filtrarServicios()"></ion-input>
+  </ion-item>
+
+  <!-- Lista de servicios -->
+  <ion-list *ngIf="serviciosFiltrados.length > 0; else noServicios">
+    <ion-card *ngFor="let servicio of serviciosFiltrados">
+      <ion-card-header>
+        <ion-card-title>
+          {{ servicio.prestadorDatos?.nombres }} {{ servicio.prestadorDatos?.apellidos }}
+        </ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content>
+        <p><strong>Email:</strong> {{ servicio.prestadorDatos?.email }}</p>
+        <p><strong>Teléfono:</strong> {{ servicio.prestadorDatos?.telefono }}</p>
+        <p><strong>Especialidad:</strong> {{ servicio.prestadorDatos?.especialidad || 'No especificada' }}</p>
+        <p><strong>Fecha agendada:</strong> {{ servicio.fechaAgendamiento | date: 'medium' }}</p>
+        <p><strong>Estado:</strong> {{ servicio.estado | titlecase }}</p>
+      </ion-card-content>
+    </ion-card>
+  </ion-list>
+
+  <!-- Mensaje si no hay servicios -->
+  <ng-template #noServicios>
+    <ion-text color="medium" class="ion-padding">
+      No tienes servicios históricos.
+    </ion-text>
+  </ng-template>
+
+</ion-content>

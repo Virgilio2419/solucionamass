@@ -1,0 +1,51 @@
+<ion-header>
+  <ion-toolbar color="primary">
+
+    <ion-title class="ion-text-center">
+      Nuevo usuario
+    </ion-title>
+     <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco"/>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="register-container">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title class="ion-text-center">Registro de Usuario</ion-card-title>
+         <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco"/>
+      </ion-button>
+    </ion-buttons>
+      </ion-card-header>
+
+      <ion-card-content>
+        <form [formGroup]="formReg" (ngSubmit)="onSubmit()">
+          <ion-item>
+            <ion-label position="floating">Correo electrónico</ion-label>
+            <ion-input type="email" formControlName="email"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">Contraseña</ion-label>
+            <ion-input type="password" formControlName="password"></ion-input>
+          </ion-item>
+
+          <div class="ion-padding-top">
+            <ion-button expand="block" type="submit" [disabled]="formReg.invalid">
+              Registrarse
+            </ion-button>
+            <ion-button expand="block" type="submit" routerLink="'/login">
+              Volver A Login
+            </ion-button>
+          </div>
+        </form>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

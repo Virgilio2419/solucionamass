@@ -1,0 +1,151 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center">Crear Usuario</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco" />
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div class="create-user-container">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title class="ion-text-center">Crear Usuario</ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content>
+        <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+          <!-- Foto de perfil -->
+          <div class="ion-text-center ion-margin-bottom">
+            <label class="foto-label">Foto de perfil</label>
+            <input type="file" accept="image/*" (change)="onFileSelected($event)" class="input-file" />
+          </div>
+
+          <div *ngIf="fotoBase64" class="ion-text-center ion-margin-bottom">
+            <img [src]="fotoBase64" alt="Foto perfil" class="foto-preview" />
+          </div>
+
+          <ion-item>
+            <ion-label position="floating">Nombres *</ion-label>
+            <ion-input formControlName="nombres"></ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="userForm.get('nombres')?.touched && userForm.get('nombres')?.invalid">
+            Debe ingresar al menos 2 caracteres.
+          </ion-text>
+
+          <ion-item>
+            <ion-label position="floating">Apellidos *</ion-label>
+            <ion-input formControlName="apellidos"></ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="userForm.get('apellidos')?.touched && userForm.get('apellidos')?.invalid">
+            Debe ingresar al menos 2 caracteres.
+          </ion-text>
+
+          <ion-item>
+            <ion-label position="floating">Teléfono (+56) *</ion-label>
+            <ion-input formControlName="telefono" maxlength="9" minlength="9" type="tel"></ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="userForm.get('telefono')?.touched && userForm.get('telefono')?.invalid">
+            Debe ser un número de 9 dígitos.
+          </ion-text>
+
+          <ion-item>
+            <ion-label position="floating">Dirección *</ion-label>
+            <ion-input formControlName="direccion"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">Región *</ion-label>
+            <ion-select formControlName="region" (ionChange)="onRegionChange($event.detail.value)">
+              <ion-select-option *ngFor="let region of regiones" [value]="region">{{ region }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">Comuna *</ion-label>
+            <ion-select formControlName="comuna" [disabled]="!comunasDisponibles.length">
+              <ion-select-option *ngFor="let comuna of comunasDisponibles" [value]="comuna">{{ comuna }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">Fecha de nacimiento *</ion-label>
+            <ion-input type="date" formControlName="fechaNacimiento"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">RUT *</ion-label>
+            <ion-input formControlName="rut"></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">Número documento *</ion-label>
+            <ion-input formControlName="numeroDocumento"></ion-input>
+          </ion-item>
+
+          <ion-item lines="none">
+            <ion-label>¿Quieres registrarte como prestador?</ion-label>
+            <ion-toggle slot="end" (ionChange)="togglePrestador()" [checked]="esPrestador"></ion-toggle>
+          </ion-item>
+
+          <div *ngIf="esPrestador" class="campos-prestador">
+            <ion-item>
+              <ion-label position="floating">Especialidad *</ion-label>
+              <ion-select formControlName="especialidad">
+                <ion-select-option *ngFor="let esp of especialidades" [value]="esp">{{ esp }}</ion-select-option>
+              </ion-select>
+            </ion-item>
+
+            <ion-list>
+              <ion-list-header>
+                <ion-label>Certificaciones</ion-label>
+                <ion-button color="primary" fill="clear" size="small" (click)="agregarCertificacion()">Agregar</ion-button>
+              </ion-list-header>
+
+              <ion-item *ngFor="let cert of certificacionesControls; let i = index" [formGroup]="cert">
+                <ion-grid>
+                  <ion-row class="ion-align-items-center">
+                    <ion-col size="5">
+                      <ion-input placeholder="Institución" formControlName="institucionCertifica"></ion-input>
+                    </ion-col>
+                    <ion-col size="5">
+                      <ion-input placeholder="Código" formControlName="codigoCertificado"></ion-input>
+                    </ion-col>
+                    <ion-col size="2" class="ion-text-right">
+                      <ion-button color="danger" fill="clear" size="small" (click)="eliminarCertificacion(i)">
+                        Eliminar
+                      </ion-button>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+              </ion-item>
+            </ion-list>
+
+            <ion-list>
+              <ion-list-header>
+                <ion-label>Horario laboral</ion-label>
+              </ion-list-header>
+
+              <ion-item *ngFor="let dia of horarioLaboralControls; let i = index" [formGroup]="dia">
+                <ion-label>{{ dia.get('dia')?.value }}</ion-label>
+                <ion-input type="time" formControlName="desde" [disabled]="dia.get('noDisponible')?.value"></ion-input>
+                <ion-input type="time" formControlName="hasta" [disabled]="dia.get('noDisponible')?.value"></ion-input>
+                <ion-checkbox slot="end" formControlName="noDisponible" (ionChange)="toggleDisponibilidad(i, dia.get('noDisponible')?.value)"></ion-checkbox>
+              </ion-item>
+            </ion-list>
+          </div>
+
+          <ion-button expand="block" color="primary" type="submit" [disabled]="!formularioValido()">
+            Crear usuario
+          </ion-button>
+        </form>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

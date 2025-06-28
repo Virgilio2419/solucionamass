@@ -1,0 +1,176 @@
+/* Contenedor principal centrado vertical y horizontalmente */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px 32px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+  min-height: 100%;
+  overflow-y: auto;
+}
+
+/* Logo con tamaño adaptable */
+.logo-login {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  margin: 24px auto 12px;
+  box-shadow: 0 6px 18px rgba(56, 112, 255, 0.25);
+  transition: transform 0.3s ease;
+  display: block;
+}
+.logo-login:hover {
+  transform: scale(1.05);
+}
+
+/* Título centrado y legible */
+.welcome-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+  margin-bottom: 6px;
+  text-align: center;
+  user-select: none;
+}
+
+/* Subtítulo centrado */
+.welcome-subtitle {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 24px;
+  font-style: italic;
+  text-align: center;
+  user-select: none;
+}
+
+/* Tarjeta con ancho adaptable y centrada */
+ion-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 24px 16px;
+  margin: 0 auto;
+}
+
+/* Inputs con líneas completas y estilos uniformes */
+.input-item {
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
+  --border-radius: 10px;
+  margin-top: 12px;
+  box-shadow: 0 3px 10px rgba(56, 112, 255, 0.1);
+  background: #fafafa;
+  transition: box-shadow 0.25s ease;
+}
+.input-item:focus-within {
+  box-shadow: 0 4px 20px rgba(56, 112, 255, 0.25);
+}
+
+/* Mensajes de error */
+.error-text {
+  font-size: 0.8rem;
+  margin-top: 4px;
+  margin-left: 12px;
+  display: block;
+  user-select: none;
+}
+
+/* Botón principal */
+.btn-primary {
+  --background: var(--ion-color-primary);
+  --background-activated: #0d3bb9;
+  --background-hover: #0d3bb9;
+  --color: white;
+  font-weight: 700;
+  --border-radius: 14px;
+  box-shadow: 0 6px 12px rgba(56, 112, 255, 0.35);
+  text-transform: uppercase;
+  transition: background-color 0.3s ease;
+}
+
+/* Botón outline para registro */
+.btn-outline {
+  font-weight: 600;
+  --border-radius: 14px;
+  text-transform: uppercase;
+}
+
+/* Botón Google */
+.google-btn {
+  --background: #4285f4;
+  --background-activated: #357ae8;
+  --background-hover: #357ae8;
+  --color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  --border-radius: 14px;
+  text-transform: none;
+  box-shadow: 0 6px 12px rgba(66, 133, 244, 0.5);
+  transition: background-color 0.25s ease;
+  white-space: nowrap;
+}
+.google-btn:hover {
+  --background: #357ae8;
+}
+
+/* Logo Google */
+.google-logo {
+  height: 22px;
+  width: 22px;
+  margin-right: 12px;
+}
+
+/* Enlace para reenviar correo de verificación */
+.resend-verification {
+  --color: var(--ion-color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: none;
+  user-select: none;
+  display: block;
+  margin: 16px auto 0;
+  width: fit-content;
+}
+
+/* Enlace para recuperar cuenta */
+.recuperar-cuenta a {
+  color: var(--ion-color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 1rem;
+  user-select: none;
+  transition: color 0.3s ease;
+  display: inline-block;
+}
+.recuperar-cuenta a:hover {
+  color: #0d3bb9;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 400px) {
+  .logo-login {
+    width: 140px;
+    height: 140px;
+    margin: 20px auto 10px;
+  }
+
+  ion-card {
+    padding: 20px 12px;
+  }
+
+  .welcome-title {
+    font-size: 1.5rem;
+  }
+
+  .welcome-subtitle {
+    font-size: 0.9rem;
+  }
+
+  ion-button {
+    font-size: 0.9rem;
+  }
+}

@@ -1,0 +1,103 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title class="ion-text-center">Iniciar Sesión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen class="ion-padding login-container">
+
+  <!-- Logo centrado -->
+  <img src="assets/icon/logo.png" alt="Logo Soluciona+" class="logo-login" />
+
+  <!-- Mensaje de bienvenida -->
+  <h2 class="welcome-title">
+    Bienvenido a <span class="highlight">Soluciona+</span>
+  </h2>
+  <p class="welcome-subtitle">
+    Tu aliado para soluciones rápidas y confiables.
+  </p>
+
+  <ion-card>
+    <ion-card-content>
+
+      <form [formGroup]="formLogin" (ngSubmit)="onLogin()">
+
+        <ion-item lines="full" class="input-item">
+          <ion-label position="floating">Correo electrónico</ion-label>
+          <ion-input
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            spellcheck="false"
+            autocapitalize="off"
+          ></ion-input>
+        </ion-item>
+        <ion-text
+          color="danger"
+          *ngIf="formLogin.get('email')?.invalid && formLogin.get('email')?.touched"
+          class="error-text"
+          >Por favor ingresa un correo válido.</ion-text
+        >
+
+        <ion-item lines="full" class="input-item">
+          <ion-label position="floating">Contraseña</ion-label>
+          <ion-input
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+          ></ion-input>
+        </ion-item>
+        <ion-text
+          color="danger"
+          *ngIf="formLogin.get('password')?.invalid && formLogin.get('password')?.touched"
+          class="error-text"
+          >La contraseña debe tener al menos 5 caracteres.</ion-text
+        >
+
+        <ion-text
+          color="danger"
+          *ngIf="loginError"
+          class="ion-text-center error-text"
+          >{{ loginError }}</ion-text
+        >
+
+        <ion-button expand="block" type="submit" [disabled]="formLogin.invalid" class="btn-primary ion-margin-top">
+          Ingresar
+        </ion-button>
+
+        <ion-button
+          expand="block"
+          fill="outline"
+          color="medium"
+          [routerLink]="'/register'"
+          class="ion-margin-top btn-outline"
+        >
+          Crear cuenta nueva
+        </ion-button>
+
+        <ion-button
+          expand="block"
+          (click)="onLoginWithGoogle()"
+          class="google-btn ion-margin-top"
+          type="button"
+        >
+          <img src="assets/icon/google.png" alt="Google" class="google-logo" />
+          Continuar con Google
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          size="small"
+          (click)="reenviarVerificacion()"
+          class="resend-verification ion-margin-top"
+        >
+          Reenviar correo de verificación
+        </ion-button>
+      </form>
+
+      <div class="recuperar-cuenta ion-text-center ion-margin-top">
+        <a [routerLink]="['/recover-password']">¿Olvidaste tu contraseña?</a>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

@@ -1,0 +1,44 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center">
+      Soluciona+
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo de la aplicación" class="logo-blanco"/>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" fullscreen>
+  <div class="main-container">
+
+    <!-- Logo -->
+    <div class="logo-container ion-text-center">
+      <img src="assets/icon/logo.png" alt="Logo de la aplicación Soluciona+" class="logo-img" />
+    </div>
+
+    <!-- Título principal -->
+    <h1 class="main-title ion-text-center">
+      Bienvenido a <span class="highlight">Soluciona+</span>
+    </h1>
+
+    <!-- Mensaje dividido para mejor legibilidad -->
+    <p class="main-message ion-text-center">
+      Tu aliado para una mejor calidad de vida.
+    </p>
+    <p class="main-message ion-text-center">
+      Deja en manos de expertos esas tareas que no sabes hacer y disfruta tranquilo.
+    </p>
+
+    <!-- Botón principal -->
+    <ion-button expand="block" color="primary" (click)="buscarEspecialistas()" class="action-button">
+      Buscar especialistas
+    </ion-button>
+
+  </div>
+</ion-content>

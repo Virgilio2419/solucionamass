@@ -1,0 +1,85 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Servicios Agendados</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco" />
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  <!-- Filtro de búsqueda -->
+  <ion-item lines="full">
+    <ion-label position="floating">Buscar por nombre, estado o fecha</ion-label>
+    <ion-input [(ngModel)]="filtro" (ionInput)="filtrarServicios()"></ion-input>
+  </ion-item>
+
+  <ion-list *ngIf="serviciosFiltrados.length > 0; else noServicios">
+    <ng-container *ngFor="let servicio of serviciosFiltrados">
+      <ion-card *ngIf="!esEstado(servicio, 'cancelado') && !esEstado(servicio, 'completo')">
+
+        <ion-card-header>
+          <ion-card-title>
+            {{ servicio.prestadorDatos?.nombres }} {{ servicio.prestadorDatos?.apellidos }}
+          </ion-card-title>
+        </ion-card-header>
+
+        <ion-card-content>
+          <p><strong>Email:</strong> {{ servicio.prestadorDatos?.email }}</p>
+          <p><strong>Teléfono:</strong> {{ servicio.prestadorDatos?.telefono }}</p>
+          <p><strong>Especialidad:</strong> {{ servicio.prestadorDatos?.especialidad || 'No especificada' }}</p>
+          <p><strong>Fecha agendada:</strong> {{ servicio.fechaAgendamiento | date: 'medium' }}</p>
+          <p><strong>Estado:</strong> {{ servicio.estado }}</p>
+
+          <p *ngIf="esEstado(servicio, 'completado prestador')">
+            <strong>Monto Final:</strong> ${{ servicio.montoFinal ?? 'No definido' }}
+          </p>
+
+          <ng-container *ngIf="!esEstado(servicio, 'cancelado')">
+
+            <ion-button color="danger" expand="block"
+              *ngIf="esEstado(servicio, 'pendiente') || esEstado(servicio, 'visita')"
+              (click)="cancelarServicio(servicio.id)">
+              Cancelar servicio
+            </ion-button>
+
+            <ion-button color="success" expand="block" *ngIf="esEstado(servicio, 'completado prestador')"
+              (click)="pagarServicio(servicio)">
+              Pagar
+            </ion-button>
+
+            <!-- <ion-button color="primary" expand="block" [disabled]="esEstado(servicio, 'pendiente')"
+              *ngIf="!esEstado(servicio, 'completado prestador')" (click)="finalizarServicio(servicio)">
+              Finalizar servicio
+            </ion-button> -->
+
+            <ion-button color="success" expand="block" *ngIf="esEstado(servicio, 'reagendado')"
+              (click)="aceptarReagendamiento(servicio.id)">
+              Aceptar nueva fecha
+            </ion-button>
+
+            <ion-button color="medium" expand="block" *ngIf="esEstado(servicio, 'reagendado')"
+              (click)="rechazarReagendamiento(servicio.id)">
+              Rechazar nueva fecha
+            </ion-button>
+
+          </ng-container>
+        </ion-card-content>
+
+      </ion-card>
+    </ng-container>
+  </ion-list>
+
+  <ng-template #noServicios>
+    <ion-text color="medium" class="ion-padding">
+      No tienes servicios agendados.
+    </ion-text>
+  </ng-template>
+
+</ion-content>

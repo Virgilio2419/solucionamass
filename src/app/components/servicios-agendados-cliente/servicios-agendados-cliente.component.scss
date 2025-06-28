@@ -1,0 +1,63 @@
+.logo-blanco {
+  height: 42px;
+  filter: brightness(0) invert(2);
+}
+
+.fondo-claro {
+  --background: #f9f9f9;
+}
+
+.mensaje-motivador {
+  text-align: center;
+  margin: 1.5rem 0 1rem;
+  
+  h2 {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 0.25rem;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #666;
+  }
+}
+
+.input-buscador {
+  margin-bottom: 1rem;
+  --padding-start: 12px;
+  --border-radius: 12px;
+}
+
+.tarjeta-servicio {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+}
+
+.titulo-prestador {
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.botones-acciones ion-button {
+  margin-top: 0.5rem;
+  border-radius: 12px;
+}
+
+.mensaje-vacio {
+  text-align: center;
+  margin-top: 4rem;
+  color: #888;
+
+  ion-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #bbb;
+  }
+
+  p {
+    font-size: 1.1rem;
+  }
+}

@@ -1,0 +1,35 @@
+<ion-header>
+  <ion-toolbar color="primary">
+                <ion-buttons slot="start">
+        <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center ion-text-wrap">
+  Solicitudes Históricas
+</ion-title>
+ <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco"/>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+    <!-- Filtro de búsqueda -->
+  <ion-item lines="full">
+    <ion-label position="floating">Buscar por nombre, estado o fecha</ion-label>
+    <ion-input [(ngModel)]="filtro" (ionInput)="filtrarSolicitudes()"></ion-input>
+  </ion-item>
+
+  <ion-card *ngFor="let servicio of solicitudes">
+    <ion-card-header>
+      <ion-card-title>Solicitudes historicas  de Cliente</ion-card-title>
+      <ion-card-subtitle>{{ servicio.estado | titlecase }} - {{ servicio.fechaAgendamiento | date:'short' }}</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      <p><strong>Cliente:</strong> {{ servicio.clienteUid }}</p>
+      <p><strong>Estado:</strong> {{ servicio.estado }}</p>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

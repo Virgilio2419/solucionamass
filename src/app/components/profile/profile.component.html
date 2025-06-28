@@ -1,0 +1,90 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center">Perfil</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco" />
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen class="ion-padding">
+
+  <!-- Logo de fondo translúcido -->
+  <div class="logo-background">
+    <img src="assets/icon/isotipo.png" alt="Logo de fondo" />
+  </div>
+
+  <div *ngIf="cargando" class="ion-text-center spinner-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Cargando perfil...</p>
+  </div>
+
+  <div *ngIf="error" class="ion-text-center ion-text-danger">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="usuario && !cargando" class="perfil-container">
+
+    <!-- Foto de perfil -->
+    <div class="profile-photo ion-text-center">
+      <img
+        *ngIf="usuario.fotoPerfilBase64; else noFoto"
+        [src]="usuario.fotoPerfilBase64"
+        alt="Foto de perfil"
+        class="foto-perfil"
+      />
+      <ng-template #noFoto>
+        <ion-icon name="person-circle-outline" class="icono-perfil-placeholder"></ion-icon>
+      </ng-template>
+    </div>
+
+    <!-- Datos personales -->
+    <ion-list lines="full" class="info-list">
+      <ion-item class="info-item">
+        <ion-label>
+          <h2>{{ usuario.nombres }} {{ usuario.apellidos }}</h2>
+          <p><strong>Email:</strong> {{ usuario.email }}</p>
+          <p><strong>Teléfono:</strong> {{ usuario.telefono }}</p>
+          <p><strong>Dirección:</strong> {{ usuario.direccion }}, {{ usuario.comuna }}, {{ usuario.region }}</p>
+          <p><strong>Fecha de nacimiento:</strong> {{ usuario.fechaNacimiento | date }}</p>
+          <p><strong>RUT:</strong> {{ usuario.rut }}</p>
+          <p><strong>N° Documento:</strong> {{ usuario.numeroDocumento }}</p>
+          <p><strong>Rol:</strong> {{ usuario.esPrestador ? 'Prestador' : 'Cliente' }}</p>
+
+          <!-- Si es prestador -->
+          <ng-container *ngIf="usuario.esPrestador">
+            <p><strong>Especialidad:</strong> {{ usuario.especialidad || 'No especificada' }}</p>
+
+            <div *ngIf="usuario.certificaciones?.length">
+              <strong>Certificaciones:</strong>
+              <ul>
+                <li *ngFor="let cert of usuario.certificaciones">
+                  {{ cert.institucionCertifica }} — Código: {{ cert.codigoCertificado }}
+                </li>
+              </ul>
+            </div>
+
+            <div *ngIf="usuario.horarioLaboral?.length">
+              <strong>Horario laboral:</strong>
+              <ul>
+                <li *ngFor="let h of usuario.horarioLaboral">
+                  {{ h.dia }}: {{ h.desde }} - {{ h.hasta }}
+                  <span *ngIf="h.noDisponible" class="no-disponible">(No disponible)</span>
+                </li>
+              </ul>
+            </div>
+          </ng-container>
+
+          <p><strong>Calificaciones:</strong> {{ usuario.cantidadCalificaciones || 0 }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+  </div>
+
+</ion-content>

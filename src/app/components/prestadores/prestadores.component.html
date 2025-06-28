@@ -1,0 +1,91 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Prestadores disponibles</ion-title>
+     <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco"/>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Filtros -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Filtros</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="floating">Filtrar por comuna</ion-label>
+        <ion-select [(ngModel)]="filtroComuna" (ionChange)="filtrarPrestadores()">
+          <ion-select-option value="">Todas</ion-select-option>
+          <ion-select-option *ngFor="let comuna of comunasDisponibles" [value]="comuna">
+            {{ comuna }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Filtrar por especialidad</ion-label>
+        <ion-select [(ngModel)]="filtroEspecialidad" (ionChange)="filtrarPrestadores()">
+          <ion-select-option value="">Todas</ion-select-option>
+          <ion-select-option *ngFor="let esp of especialidadesDisponibles" [value]="esp">
+            {{ esp }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Lista de prestadores -->
+  <ion-card *ngFor="let prestador of prestadoresFiltrados">
+    <ion-card-header>
+      <ion-avatar class="ion-margin-bottom">
+        <img *ngIf="prestador.fotoPerfilBase64; else sinFoto" [src]="prestador.fotoPerfilBase64" />
+        <ng-template #sinFoto>
+          <img src="assets/default-user.png" alt="Sin foto" />
+        </ng-template>
+      </ion-avatar>
+      <ion-card-title>{{ prestador.nombres }} {{ prestador.apellidos }}</ion-card-title>
+      <ion-card-subtitle>{{ prestador.especialidad || 'Sin especialidad' }} • {{ prestador.comuna }}</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      <p><strong>Teléfono:</strong> {{ prestador.telefono }}</p>
+      <p><strong>Dirección:</strong> {{ prestador.direccion }}</p>
+
+      <!-- Horario laboral -->
+      <ng-container *ngIf="prestador.horarioLaboral && prestador.horarioLaboral.length > 0; else sinHorario">
+        <p><strong>Horario laboral:</strong></p>
+        <ul>
+          <li *ngFor="let h of prestador.horarioLaboral">
+            {{ h.dia }}: {{ h.desde }} - {{ h.hasta }}
+          </li>
+        </ul>
+      </ng-container>
+      <ng-template #sinHorario>
+        <p><strong>Horario laboral:</strong> No definido</p>
+      </ng-template>
+
+      <ion-button expand="block" color="primary" (click)="agendarServicio(prestador)">
+        Agendar Servicio
+      </ion-button>
+      <ion-button expand="block" color="tertiary" (click)="agendarVisita(prestador)">
+        Agendar Visita Técnica
+      </ion-button>
+      <!-- Promedio de calificación -->
+<ng-container *ngIf="prestador.promedioCalificacion !== undefined">
+  <p><strong>Calificación:</strong> ⭐ {{ prestador.promedioCalificacion.toFixed(1) }} / 5</p>
+</ng-container>
+
+<!-- Botón para ver comentarios -->
+<ion-button fill="clear" size="small" color="medium" (click)="verComentarios(prestador)">
+  Ver comentarios ({{ prestador.comentarios?.length || 0 }})
+</ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

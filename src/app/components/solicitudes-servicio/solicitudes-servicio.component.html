@@ -1,0 +1,98 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button menu="m1"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Solicitudes de Servicio</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" disabled>
+        <img src="assets/icon/isotipo.png" alt="Logo" class="logo-blanco" />
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Mensaje motivador -->
+  <div class="mensaje-bienvenida">
+    👋 Hola <strong>{{ nombreUsuario }}</strong>, hoy es un gran día para entregar un servicio de excelencia.
+  </div>
+
+  <!-- Filtro de búsqueda -->
+  <ion-item lines="full">
+    <ion-label position="floating">Buscar por nombre, estado o fecha</ion-label>
+    <ion-input [(ngModel)]="filtro" (ionInput)="filtrarSolicitudes()"></ion-input>
+  </ion-item>
+
+  <ion-list *ngIf="estadoResumen | keyvalue as resumen">
+    <ion-item lines="none">
+      <ion-label>
+        <h2>Resumen por estado:</h2>
+        <ul>
+          <li *ngFor="let item of resumen">
+            {{ item.key | titlecase }}: {{ item.value }}
+          </li>
+        </ul>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <!-- Lista de solicitudes filtradas -->
+  <ion-card *ngFor="let servicio of solicitudesFiltradas"
+    [ngClass]="{
+      'card-reagendar': esEstado(servicio, 'reagendar'),
+      'card-en-proceso': esEstado(servicio, 'en_proceso'),
+      'card-otros': !esEstado(servicio, 'reagendar') && !esEstado(servicio, 'en_proceso')
+    }"
+  >
+    <ion-card-header>
+      <ion-card-title>
+        Solicitud de Cliente
+        <ion-icon *ngIf="serviciosConConflicto.has(servicio.id!)"
+          name="warning"
+          color="danger"
+          style="margin-left: 8px;">
+        </ion-icon>
+      </ion-card-title>
+
+      <ion-card-subtitle>
+        {{ servicio.estado | titlecase }} - {{ servicio.fechaAgendamiento | date:'short' }}
+      </ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      <p><strong>Cliente:</strong> {{ servicio.clienteUid }}</p>
+      <p><strong>Estado:</strong> {{ servicio.estado }}</p>
+
+      <p *ngIf="serviciosConConflicto.has(servicio.id!)" style="color: #b71c1c; font-weight: bold;">
+        ⚠️ Atención: Hay menos de 1 hora entre este servicio y otro.
+      </p>
+
+<ion-button color="success" expand="block"
+  *ngIf="esEstado(servicio, 'pendiente') || esEstado(servicio, 'reagendado') || esEstado(servicio, 'reagendar')"
+  (click)="aceptar(servicio)">
+  Aceptar
+</ion-button>
+
+<ion-button color="danger" expand="block"
+*ngIf="esEstado(servicio, 'pendiente') || esEstado(servicio, 'reagendado') || esEstado(servicio, 'reagendar')|| esEstado(servicio, 'en proceso')"
+  (click)="rechazar(servicio)">
+  Rechazar
+</ion-button>
+
+<ion-button color="warning" expand="block"
+*ngIf="esEstado(servicio, 'reagendado') || esEstado(servicio, 'reagendar')|| esEstado(servicio, 'pendiente')"
+  (click)="reagendar(servicio)">
+  Reagendar
+</ion-button>
+
+<ion-button color="primary" expand="block"
+*ngIf="esEstado(servicio, 'en proceso')"
+  (click)="finalizarServicio(servicio)" >
+
+  Finalizar servicio
+</ion-button>
+
+    </ion-card-content>
+  </ion-card>
+</ion-content>
