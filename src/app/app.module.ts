@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'; // ← NUEVA SINTAXIS
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
@@ -52,11 +52,10 @@ import { ReturnTransbankComponent } from './components/return-transbank/return-t
     FormsModule,
     CommonModule,
     FlatpickrModule,
-    // ← YA NO NECESITAS HttpClientModule aquí
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    provideHttpClient(withInterceptorsFromDi()), // ← NUEVA FORMA DE PROVEER HttpClient
+    provideHttpClient(withInterceptorsFromDi()),
     provideFirebaseApp(() =>
       initializeApp({
         projectId: 'solucionamass',

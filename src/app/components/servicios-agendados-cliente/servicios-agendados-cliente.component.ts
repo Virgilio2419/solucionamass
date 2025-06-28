@@ -23,7 +23,7 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
 
   constructor(
     private servicioService: ServicioService,
-    private transbankService: TransbankService, // Solo inyectamos TransbankService
+    private transbankService: TransbankService,
     private auth: Auth,
     private firestore: Firestore,
     private alertController: AlertController,
@@ -422,11 +422,9 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
     await loading.present();
 
     try {
-      // Recargar servicios para ver si el estado cambió
       await this.cargarServicios();
       await loading.dismiss();
 
-      // Verificar si el servicio ya está pagado
       const servicioActualizado = this.servicios.find(s => s.id === servicio.id);
       
       if (servicioActualizado && this.esEstado(servicioActualizado, 'pagado')) {
@@ -441,10 +439,7 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
           header: 'Pago pendiente',
           message: 'El pago aún no se ha confirmado. Si ya pagaste, espera unos minutos y verifica nuevamente.',
           buttons: [
-            {
-              text: 'OK',
-              role: 'cancel'
-            },
+            { text: 'OK', role: 'cancel' },
             {
               text: 'Verificar de nuevo',
               handler: () => {
