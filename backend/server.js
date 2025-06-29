@@ -1,130 +1,158 @@
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-const app = express();
-const PORT = 3001;
+// Cargar variables de entorno ANTES de cualquier otra cosa
+require("dotenv").config()
 
-// Para poder recibir JSON en el body
-app.use(express.json());
+const express = require("express")
+const cors = require("cors")
+const paypal = require("@paypal/checkout-server-sdk")
 
-// CORS: permite tu frontend y ngrok
-app.use(cors({
-  origin: [
-    'http://localhost:8100',
-    'http://localhost:8101',
-    'http://localhost:4200',
-    'https://6250-2803-c600-d30d-ca88-7c2e-bf84-3f76-db8a.ngrok-free.app'
-  ],
-  credentials: true,
-}));
+const app = express()
 
-// Logging básico
-app.use((req, res, next) => {
-  console.log(`\n=== ${new Date().toISOString()} ===`);
-  console.log(`${req.method} ${req.path}`);
-  console.log('Headers:', req.headers);
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log('Body:', JSON.stringify(req.body, null, 2));
-  }
-  next();
-});
+app.use(cors())
+app.use(express.json())
 
-// Credenciales PayPal Sandbox
-const PAYPAL_CLIENT_ID = 'Acoy4bZR9EtRfE8TjMsnLBhpgET3FUmy1ou_eV5riX1wVhSLzStfW2PZvpipg2kAhwBdRvr9S2L0p7VU';
-const PAYPAL_SECRET = 'EOTlu8SRk7l5epdYohwBZD1ucfKoFcgEVALVRlTUHgIBbE-oK3w-yZdhv5cImhkrPSTjXSVGR0yAlJcE';
-const PAYPAL_API = 'https://api-m.sandbox.paypal.com';
+// Debug: Verificar que las variables de entorno se carguen
+console.log("=== VERIFICACIÓN DE CREDENCIALES ===")
+console.log(
+  "PAYPAL_CLIENT_ID:",
+  process.env.PAYPAL_CLIENT_ID ? `${process.env.PAYPAL_CLIENT_ID.substring(0, 10)}...` : "❌ NO ENCONTRADO",
+)
+console.log(
+  "PAYPAL_CLIENT_SECRET:",
+  process.env.PAYPAL_CLIENT_SECRET ? `${process.env.PAYPAL_CLIENT_SECRET.substring(0, 10)}...` : "❌ NO ENCONTRADO",
+)
+console.log("=====================================")
 
-// Función para obtener token de acceso PayPal
-async function getPayPalAccessToken() {
-  const response = await axios({
-    url: `${PAYPAL_API}/v1/oauth2/token`,
-    method: 'post',
-    auth: {
-      username: PAYPAL_CLIENT_ID,
-      password: PAYPAL_SECRET,
-    },
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    data: 'grant_type=client_credentials',
-  });
-  return response.data.access_token;
+// Verificar que las credenciales existan
+if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
+  console.error("❌ ERROR: Las credenciales de PayPal no están configuradas correctamente")
+  console.error("Asegúrate de que el archivo .env existe y contiene:")
+  console.error("PAYPAL_CLIENT_ID=tu_client_id")
+  console.error("PAYPAL_CLIENT_SECRET=tu_client_secret")
+  process.exit(1)
 }
 
-// Crear orden de pago en PayPal
-app.post('/api/paypal/orders', async (req, res) => {
+// Configura PayPal environment sandbox
+const environment = new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
+
+const client = new paypal.core.PayPalHttpClient(environment)
+
+// Crear orden PayPal
+app.post("/api/paypal/orders", async (req, res) => {
+  const { amount, currency, returnUrl, cancelUrl } = req.body
+
+  console.log("📝 Datos recibidos:", { amount, currency, returnUrl, cancelUrl })
+
+  if (!amount || !currency) {
+    return res.status(400).json({ error: "Amount and currency are required" })
+  }
+
+  // Usar las URLs enviadas desde el frontend o usar las por defecto
+  const finalReturnUrl = returnUrl || "http://localhost:8100/return-paypal"
+  const finalCancelUrl = cancelUrl || "http://localhost:8100/payment-cancel"
+
+  console.log("🔗 URLs configuradas:", { finalReturnUrl, finalCancelUrl })
+
+  const request = new paypal.orders.OrdersCreateRequest()
+  request.prefer("return=representation")
+  request.requestBody({
+    intent: "CAPTURE",
+    purchase_units: [
+      {
+        amount: {
+          currency_code: currency,
+          value: amount.toFixed(2),
+        },
+      },
+    ],
+    application_context: {
+      brand_name: "SolucionaMass",
+      landing_page: "NO_PREFERENCE",
+      user_action: "PAY_NOW",
+      return_url: finalReturnUrl,
+      cancel_url: finalCancelUrl,
+    },
+  })
+
   try {
-    const { amount, currency = 'USD' } = req.body;
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: 'Amount debe ser mayor que 0' });
+    console.log("🚀 Enviando request a PayPal...")
+    const order = await client.execute(request)
+    console.log("✅ PayPal Order Response:", JSON.stringify(order.result, null, 2))
+
+    // Buscar el link de aprobación
+    const approveLink = order.result.links?.find((link) => link.rel === "approve")
+
+    if (!approveLink) {
+      console.error("❌ No approve link found in PayPal response")
+      console.error("Available links:", order.result.links)
+      return res.status(500).json({ error: "No approve link found in PayPal response" })
     }
 
-    const accessToken = await getPayPalAccessToken();
+    if (!order.result.id) {
+      console.error("❌ No order ID found in PayPal response")
+      return res.status(500).json({ error: "No order ID found in PayPal response" })
+    }
 
-    const orderResponse = await axios({
-      url: `${PAYPAL_API}/v2/checkout/orders`,
-      method: 'post',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      data: {
-        intent: 'CAPTURE',
-        purchase_units: [{
-          amount: {
-            currency_code: currency,
-            value: amount.toFixed(2)
-          }
-        }],
-        application_context: {
-          return_url: 'https://tu-frontend.com/paypal-return', // Cambia esta URL a tu frontend real
-          cancel_url: 'https://tu-frontend.com/paypal-cancel'
-        }
-      }
-    });
+    const response = {
+      id: order.result.id,
+      approveUrl: approveLink.href,
+      status: order.result.status,
+      links: order.result.links,
+    }
 
-    res.json(orderResponse.data);
+    console.log("📤 Sending response:", response)
+    res.json(response)
   } catch (error) {
-    console.error('Error creando orden PayPal:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error creando orden PayPal' });
+    console.error("❌ Error creating PayPal order:", error)
+    console.error("Error details:", error.details || [])
+    res.status(500).json({
+      error: error.message || "Error creating PayPal order",
+      details: error.details || [],
+    })
   }
-});
+})
 
-// Capturar pago después de que el usuario aprueba la orden en PayPal
-app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
+// Capturar pago PayPal
+app.post("/api/paypal/orders/:orderId/capture", async (req, res) => {
+  const { orderId } = req.params
+
+  if (!orderId) {
+    return res.status(400).json({ error: "Order ID is required" })
+  }
+
+  const request = new paypal.orders.OrdersCaptureRequest(orderId)
+  request.requestBody({})
+
   try {
-    const { orderId } = req.params;
-    if (!orderId) return res.status(400).json({ error: 'orderId requerido' });
+    const capture = await client.execute(request)
+    console.log("PayPal Capture Response:", JSON.stringify(capture.result, null, 2))
 
-    const accessToken = await getPayPalAccessToken();
+    if (!capture.result.purchase_units?.[0]?.payments?.captures?.[0]) {
+      return res.status(500).json({ error: "No capture information found" })
+    }
 
-    const captureResponse = await axios({
-      url: `${PAYPAL_API}/v2/checkout/orders/${orderId}/capture`,
-      method: 'post',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      }
-    });
+    const captureInfo = capture.result.purchase_units[0].payments.captures[0]
 
-    res.json(captureResponse.data);
+    const response = {
+      orderId: capture.result.id,
+      status: capture.result.status,
+      captureId: captureInfo.id,
+      amount: captureInfo.amount,
+      createTime: capture.result.create_time,
+      updateTime: capture.result.update_time,
+    }
+
+    console.log("Sending capture response:", response)
+    res.json(response)
   } catch (error) {
-    console.error('Error capturando pago PayPal:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Error capturando pago PayPal' });
+    console.error("Error capturing PayPal payment:", error)
+    res.status(500).json({
+      error: error.message || "Error capturing PayPal payment",
+      details: error.details || [],
+    })
   }
-});
+})
 
-// Ruta healthcheck
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString(), port: PORT });
-});
-
-// Rutas no encontradas
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Ruta no encontrada', path: req.originalUrl });
-});
-
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor PayPal Sandbox iniciado en http://localhost:${PORT}`);
-});
+app.listen(3001, () => {
+  console.log("🚀 Servidor PayPal Sandbox iniciado en http://localhost:3001")
+  console.log("✅ Credenciales de PayPal cargadas correctamente")
+})

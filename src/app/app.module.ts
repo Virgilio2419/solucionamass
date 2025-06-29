@@ -25,8 +25,8 @@ import { provideFlatpickrDefaults } from 'angularx-flatpickr';
 import { ProfileComponent } from './components/profile/profile.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
-import { ReturnTransbankComponent } from './components/return-transbank/return-transbank.component';
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
+import { ReturnPaypalComponent } from './components/return-paypal/return-paypal.component';
 
 @NgModule({
   declarations: [
@@ -36,14 +36,14 @@ import { LocationStrategy, HashLocationStrategy } from '@angular/common';
     MainComponent,
     CreateUserComponent,
     PrestadoresPage,
-    ServiciosAgendadosClienteComponent,
     SolicitudesServicioComponent,
     histSolicitudesServicioComponent,
     HistServiciosAgendadosClienteComponent,
     ProfileComponent,
     ForgotPasswordComponent,
     RecoverPasswordComponent,
-    ReturnTransbankComponent
+    ReturnPaypalComponent,
+    ServiciosAgendadosClienteComponent,
   ],
   imports: [
     BrowserModule,

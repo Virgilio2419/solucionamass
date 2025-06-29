@@ -14,7 +14,7 @@ import { HistServiciosAgendadosClienteComponent } from './components/hist-servic
 import { ProfileComponent } from './components/profile/profile.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
-import { ReturnTransbankComponent } from './components/return-transbank/return-transbank.component';
+import { ReturnPaypalComponent } from './components/return-paypal/return-paypal.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -29,7 +29,7 @@ const routes: Routes = [
   { path: 'hist-solicitudes-servicio', component: histSolicitudesServicioComponent, ...canActivate(() => redirectUnauthorizedTo(['/login'])) },
   { path: 'hist-servicios-agendados-cliente', component: HistServiciosAgendadosClienteComponent, ...canActivate(() => redirectUnauthorizedTo(['/login'])) },
   { path: 'profile', component: ProfileComponent, ...canActivate(() => redirectUnauthorizedTo(['/login'])) },
-  { path: 'return-transbank', component: ReturnTransbankComponent },
+  { path: 'return-paypal', component: ReturnPaypalComponent },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' }
 ];

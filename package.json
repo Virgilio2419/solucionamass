@@ -28,6 +28,7 @@
     "@capacitor/keyboard": "7.0.1",
     "@capacitor/status-bar": "7.0.1",
     "@ionic/angular": "^8.0.0",
+    "@paypal/checkout-server-sdk": "^1.0.3",
     "angularx-flatpickr": "^8.1.0",
     "date-fns": "^2.30.0",
     "flatpickr": "^4.6.13",
