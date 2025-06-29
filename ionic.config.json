@@ -3,5 +3,11 @@
   "integrations": {
     "capacitor": {}
   },
-  "type": "angular"
+  "type": "angular",
+  "proxies": [
+    {
+      "path": "/api/transbank",
+      "proxyUrl": "https://webpay3gint.transbank.cl/rswebpaytransaction/api/webpay/v1.2"
+    }
+  ]
 }

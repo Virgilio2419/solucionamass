@@ -10,6 +10,7 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root'
 })
 export class UserService {
+  [x: string]: any;
   
   private usuarioActualSubject = new BehaviorSubject<Usuario | null>(null);
   usuarioActual$ = this.usuarioActualSubject.asObservable();

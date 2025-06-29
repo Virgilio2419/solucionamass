@@ -23,12 +23,20 @@ export class AppComponent implements OnInit, OnDestroy {
     private auth: Auth
   ) {}
 
-  ngOnInit() {
-    this.sub = this.userService.usuarioActual$.subscribe(usuario => {
-      this.usuarioActual = usuario;
-      this.cdr.detectChanges();
-    });
-  }
+ngOnInit() {
+  this.sub = this.userService.usuarioActual$.subscribe(usuario => {
+    this.usuarioActual = usuario;
+    this.cdr.detectChanges();
+
+    const rutaActual = this.router.url;
+    const esRutaDeTransbank = rutaActual.includes('return-transbank');
+
+    // Si no hay usuario y no es la ruta de Transbank, redirigir
+    if (!usuario && !esRutaDeTransbank) {
+      this.router.navigate(['/main']);
+    }
+  });
+}
 
   ngOnDestroy() {
     this.sub?.unsubscribe();

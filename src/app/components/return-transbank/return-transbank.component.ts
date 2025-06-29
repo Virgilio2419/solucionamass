@@ -1,141 +1,108 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, AlertController } from '@ionic/angular';
-import { TransbankService } from 'src/app/services/transbank.service';
+import { PaymentService } from 'src/app/services/payment.service';
 import { Firestore, doc, updateDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-return-transbank',
   templateUrl: './return-transbank.component.html',
   styleUrls: ['./return-transbank.component.scss'],
-  standalone: false
+  standalone:false
 })
 export class ReturnTransbankComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private loadingController: LoadingController,
-    private alertController: AlertController,
-    private transbankService: TransbankService,
+    private loadingCtrl: LoadingController,
+    private alertCtrl: AlertController,
+    private paymentService: PaymentService,
     private firestore: Firestore
-  ) { }
+  ) {}
 
   async ngOnInit() {
-    const token = this.route.snapshot.queryParamMap.get('token_ws');
+    const token     = this.route.snapshot.queryParamMap.get('token_ws');
     const paymentId = this.route.snapshot.queryParamMap.get('paymentId');
-    const servicioId = this.route.snapshot.queryParamMap.get('servicioId');
+    const servicioId= this.route.snapshot.queryParamMap.get('servicioId');
 
-    console.log('Return page params:', { token, paymentId, servicioId });
+    console.log('Params recibidos:', { token, paymentId, servicioId });
 
-    if (token && paymentId && servicioId) {
-      await this.procesarRetorno(token, paymentId, servicioId);
-    } else {
-      await this.mostrarError('Parámetros de retorno inválidos');
+    if (!token || !paymentId || !servicioId) {
+      return this.showError('Parámetros de retorno inválidos.');
     }
-  }
 
-  private async procesarRetorno(token: string, paymentId: string, servicioId: string) {
-    const loading = await this.loadingController.create({
-      message: 'Confirmando pago...',
-      spinner: 'crescent'
-    });
+    const loading = await this.loadingCtrl.create({ message: 'Confirmando pago...' });
     await loading.present();
 
     try {
-      // Confirmar transacción con Transbank
-      this.transbankService.confirmTransaction(token).subscribe({
-        next: async (response) => {
-          console.log('Respuesta de Transbank:', response);
-          
-          if (response.response_code === 0) {
-            // Pago exitoso
-            await this.actualizarPagoExitoso(paymentId, servicioId, response);
-            await loading.dismiss();
-            
-            const alert = await this.alertController.create({
-              header: '¡Pago exitoso!',
-              message: `Tu pago ha sido procesado correctamente. Código de autorización: ${response.authorization_code}`,
-              buttons: [{
-                text: 'Continuar',
-                handler: () => {
-                  this.router.navigate(['/tabs/servicios-cliente']);
-                }
-              }]
-            });
-            await alert.present();
-            
-          } else {
-            // Pago rechazado
-            await this.actualizarPagoRechazado(paymentId);
-            await loading.dismiss();
-            await this.mostrarError('El pago fue rechazado por el banco. Intenta con otra tarjeta.');
-          }
-        },
-        error: async (error) => {
-          await loading.dismiss();
-          console.error('Error al confirmar con Transbank:', error);
-          await this.mostrarError('Error al confirmar el pago con Transbank.');
-        }
-      });
+      const resp = await this.paymentService.confirmPayment(token);
+      console.log('Respuesta confirmPayment:', resp);
 
-    } catch (error) {
+      if (resp.response_code === 0) {
+        await this.markPaymentSuccess(paymentId, servicioId, resp);
+        await loading.dismiss();
+
+        const alert = await this.alertCtrl.create({
+          header: '¡Pago exitoso!',
+          message: `Autorización: ${resp.authorization_code}`,
+          buttons: [{
+            text: 'Continuar',
+            handler: () => this.router.navigate(['/servicios-agendados-cliente'])
+          }]
+        });
+        await alert.present();
+
+      } else {
+        await this.markPaymentFailed(paymentId);
+        await loading.dismiss();
+        await this.showError('El pago fue rechazado por Transbank');
+      }
+
+    } catch (err) {
+      console.error('Error confirmando pago:', err);
       await loading.dismiss();
-      console.error('Error al procesar retorno:', error);
-      await this.mostrarError('Error al procesar el pago. Contacta con soporte.');
+      await this.showError('Error al confirmar el pago');
     }
   }
 
-  private async actualizarPagoExitoso(paymentId: string, servicioId: string, response: any) {
-    try {
-      // Actualizar registro de pago
-      const paymentRef = doc(this.firestore, 'payments', paymentId);
-      await updateDoc(paymentRef, {
-        status: 'approved',
-        authorizationCode: response.authorization_code,
-        paymentTypeCode: response.payment_type_code,
-        cardNumber: response.card_detail?.card_number,
-        transactionDate: response.transaction_date,
-        updatedAt: new Date().toISOString()
-      });
+  private async markPaymentSuccess(paymentId: string, servicioId: string, resp: any) {
+    const payRef = doc(this.firestore, 'payments', paymentId);
+    await updateDoc(payRef, {
+      status: 'approved',
+      authorizationCode: resp.authorization_code,
+      paymentTypeCode: resp.payment_type_code,
+      cardNumber: resp.card_detail?.card_number,
+      transactionDate: resp.transaction_date,
+      updatedAt: new Date().toISOString()
+    });
 
-      // Actualizar estado del servicio
-      const servicioRef = doc(this.firestore, 'servicios', servicioId);
-      await updateDoc(servicioRef, {
-        estado: 'pagado',
-        fechaPago: new Date().toISOString(),
-        codigoAutorizacion: response.authorization_code
-      });
-
-      console.log('Pago actualizado exitosamente');
-    } catch (error) {
-      console.error('Error al actualizar pago exitoso:', error);
-    }
+    const servRef = doc(this.firestore, 'servicios', servicioId);
+    await updateDoc(servRef, {
+      estado: 'pagado',
+      fechaPago: new Date().toISOString(),
+      codigoAutorizacion: resp.authorization_code
+    });
   }
 
-  private async actualizarPagoRechazado(paymentId: string) {
-    try {
-      const paymentRef = doc(this.firestore, 'payments', paymentId);
-      await updateDoc(paymentRef, {
-        status: 'rejected',
-        updatedAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error al actualizar pago rechazado:', error);
-    }
+  private async markPaymentFailed(paymentId: string) {
+    const payRef = doc(this.firestore, 'payments', paymentId);
+    await updateDoc(payRef, {
+      status: 'rejected',
+      updatedAt: new Date().toISOString()
+    });
   }
 
-  private async mostrarError(mensaje: string) {
-    const alert = await this.alertController.create({
+  private async showError(message: string) {
+    const alert = await this.alertCtrl.create({
       header: 'Error en el pago',
-      message: mensaje,
+      message,
       buttons: [{
         text: 'Volver',
-        handler: () => {
-          this.router.navigate(['/tabs/servicios-cliente']);
-        }
+        handler: () => this.router.navigate(['/servicios-agendados-cliente'])
       }]
     });
     await alert.present();
   }
+
 }

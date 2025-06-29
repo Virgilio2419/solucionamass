@@ -26,6 +26,7 @@ import { ProfileComponent } from './components/profile/profile.component';
 import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
 import { RecoverPasswordComponent } from './components/recover-password/recover-password.component';
 import { ReturnTransbankComponent } from './components/return-transbank/return-transbank.component';
+import { LocationStrategy, HashLocationStrategy } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -54,6 +55,7 @@ import { ReturnTransbankComponent } from './components/return-transbank/return-t
     FlatpickrModule,
   ],
   providers: [
+    { provide: LocationStrategy, useClass: HashLocationStrategy },
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideHttpClient(withInterceptorsFromDi()),
     provideFirebaseApp(() =>

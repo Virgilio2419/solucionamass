@@ -1,14 +1,25 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Procesando Pago</ion-title>
-  </ion-toolbar>
-</ion-header>
+<!-- src/assets/return-transbank.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirigiendo...</title>
+</head>
+<body>
+  <p>Redirigiendo al sistema...</p>
+  <script>
+    // Extraer los parámetros que Transbank envía
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token_ws');
+    const paymentId = params.get('paymentId');
+    const servicioId = params.get('servicioId');
 
-<ion-content class="ion-padding ion-text-center">
-  <div class="processing-container">
-    <ion-spinner name="crescent" color="primary"></ion-spinner>
-    <h2>Confirmando tu pago...</h2>
-    <p>Por favor espera mientras procesamos tu transacción con Transbank.</p>
-    <p class="note">No cierres esta ventana hasta que se complete el proceso.</p>
-  </div>
-</ion-content>
+    if (token && paymentId && servicioId) {
+      // Redirige usando GET a Angular
+      window.location.href = `/return-transbank?token_ws=${token}&paymentId=${paymentId}&servicioId=${servicioId}`;
+    } else {
+      document.body.innerHTML = 'Error: Parámetros no válidos';
+    }
+  </script>
+</body>
+</html>

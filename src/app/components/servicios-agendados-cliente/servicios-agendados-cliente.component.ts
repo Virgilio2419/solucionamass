@@ -1,10 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ServicioService, ServicioConPrestador } from 'src/app/services/servicio.service';
-import { TransbankService, TransbankTransaction } from 'src/app/services/transbank.service';
+import { PaymentService } from 'src/app/services/payment.service';
 import { Auth, user } from '@angular/fire/auth';
 import { Subscription } from 'rxjs';
 import { Firestore, doc, updateDoc, collection, addDoc } from '@angular/fire/firestore';
-import { AlertController, LoadingController } from '@ionic/angular';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { Platform } from '@ionic/angular';
 
 @Component({
   selector: 'app-servicios-agendados-cliente',
@@ -18,16 +19,17 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
   uidCliente: string | null = null;
   authSub?: Subscription;
   filtro: string = '';
-  uidPrestador: any;
   nombreCliente: string = '';
 
   constructor(
     private servicioService: ServicioService,
-    private transbankService: TransbankService,
+    private paymentService: PaymentService,
     private auth: Auth,
     private firestore: Firestore,
     private alertController: AlertController,
-    private loadingController: LoadingController
+    private loadingController: LoadingController,
+    private toastController: ToastController,
+    private platform: Platform
   ) {}
 
   ngOnInit() {
@@ -201,7 +203,12 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
     idReferencia?: string
   ): Promise<boolean> {
     if (!calificadoUid || !this.uidCliente) {
-      alert('No se pudo identificar al usuario que califica o al que será calificado.');
+      const toast = await this.toastController.create({
+        message: 'No se pudo identificar al usuario para la calificación.',
+        duration: 3000,
+        color: 'warning'
+      });
+      await toast.present();
       return false;
     }
 
@@ -237,7 +244,12 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
               const comentario = data?.comentario?.trim() || '';
 
               if (!Number.isInteger(puntuacion) || puntuacion < 1 || puntuacion > 5) {
-                alert('La puntuación debe ser un número entero entre 1 y 5.');
+                const toast = await this.toastController.create({
+                  message: 'La puntuación debe ser un número entero entre 1 y 5.',
+                  duration: 3000,
+                  color: 'warning'
+                });
+                await toast.present();
                 resolve(false);
                 return false;
               }
@@ -254,11 +266,21 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
 
               try {
                 await addDoc(collection(this.firestore, 'calificaciones'), calificacion);
-                alert('✅ Calificación enviada');
+                const toast = await this.toastController.create({
+                  message: '✅ Calificación enviada exitosamente',
+                  duration: 2000,
+                  color: 'success'
+                });
+                await toast.present();
                 resolve(true);
               } catch (error) {
                 console.error('Error al guardar la calificación:', error);
-                alert('❌ Error al enviar la calificación');
+                const toast = await this.toastController.create({
+                  message: '❌ Error al enviar la calificación',
+                  duration: 3000,
+                  color: 'danger'
+                });
+                await toast.present();
                 resolve(false);
               }
 
@@ -273,6 +295,17 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
   }
 
   async pagarServicio(servicio: ServicioConPrestador) {
+    // Validar que el servicio tenga monto final
+    if (!servicio.montoFinal || servicio.montoFinal <= 0) {
+      const alert = await this.alertController.create({
+        header: 'Error',
+        message: 'Este servicio no tiene un monto final definido. Contacta al prestador.',
+        buttons: ['OK']
+      });
+      await alert.present();
+      return;
+    }
+
     // Paso 1: Solicitar calificación primero
     const calificacionExitosa = await this.solicitarCalificacion(
       servicio.prestadorUid!,
@@ -281,18 +314,19 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
       servicio.id
     );
 
+    // Si el usuario canceló o falló la calificación, no continuar con el pago
     if (!calificacionExitosa) return;
 
     // Paso 2: Confirmar el pago
     const alertaPago = await this.alertController.create({
       header: 'Confirmar pago',
-      message: `¿Deseas pagar el monto final de $${servicio.montoFinal ?? '0'} por este servicio?`,
+      message: `¿Deseas pagar el monto final de $${servicio.montoFinal.toLocaleString('es-CL')} por este servicio?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Pagar con Transbank',
+          text: 'Pagar con PayPal',
           handler: async () => {
-            await this.procesarPagoTransbank(servicio);
+            await this.procesarPagoPayPal(servicio);
           }
         }
       ]
@@ -301,168 +335,123 @@ export class ServiciosAgendadosClienteComponent implements OnInit, OnDestroy {
     await alertaPago.present();
   }
 
-  private async procesarPagoTransbank(servicio: ServicioConPrestador) {
+  private async procesarPagoPayPal(servicio: ServicioConPrestador) {
     const loading = await this.loadingController.create({
-      message: 'Iniciando pago con Transbank...',
+      message: 'Iniciando pago con PayPal...',
       spinner: 'crescent'
     });
     await loading.present();
 
     try {
-      // Crear datos de la transacción
-      const buyOrder = this.transbankService.generateBuyOrder();
-      const sessionId = this.transbankService.generateSessionId();
-      const amount = servicio.montoFinal || 0;
+      console.log('Iniciando pago para servicio:', servicio.id);
 
-      // Guardar información del pago en Firestore
-      const paymentData = {
-        servicioId: servicio.id,
-        clienteUid: this.uidCliente,
-        prestadorUid: servicio.prestadorUid,
-        amount,
-        buyOrder,
-        sessionId,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      };
+      // Solicita creación de orden PayPal y obtén url de aprobación
+      const paymentData = await this.paymentService.initPayment(servicio, this.uidCliente!);
+      console.log('Payment data recibido:', paymentData);
+      await loading.dismiss();
 
-      const paymentRef = await addDoc(collection(this.firestore, 'payments'), paymentData);
+      // Abrir ventana popup con la URL de aprobación PayPal
+      const paypalWindow = window.open(
+        paymentData.url, // asumiendo que aquí está la URL de aprobación PayPal
+        'paypal_payment',
+        'width=800,height=600,scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no'
+      );
 
-      // Crear transacción en Transbank
-      const transaction: TransbankTransaction = {
-        buy_order: buyOrder,
-        session_id: sessionId,
-        amount,
-        return_url: `${window.location.origin}/return-transbank?paymentId=${paymentRef.id}&servicioId=${servicio.id}`
-      };
+      if (!paypalWindow) {
+        await this.alertController.create({
+          header: 'Bloqueador de ventanas',
+          message: 'Por favor, permite las ventanas emergentes para proceder con el pago.',
+          buttons: ['OK']
+        }).then(alert => alert.present());
+        return;
+      }
 
-      // Llamar a Transbank
-      this.transbankService.createTransaction(transaction).subscribe({
-        next: async (response) => {
-          await loading.dismiss();
-          
-          // Actualizar el registro con el token
-          await updateDoc(paymentRef, {
-            token: response.token,
-            updatedAt: new Date().toISOString()
-          });
-
-          // Mostrar instrucciones y abrir Transbank
-          const alert = await this.alertController.create({
-            header: 'Redirigiendo a Transbank',
-            message: 'Se abrirá una nueva ventana para completar tu pago. Una vez completado, regresa a esta aplicación para verificar el estado.',
-            buttons: [
-              {
-                text: 'Abrir Transbank',
-                handler: () => {
-                  const paymentUrl = `${response.url}?token_ws=${response.token}`;
-                  window.open(paymentUrl, '_blank');
-                  
-                  // Mostrar botón para verificar pago después de un tiempo
-                  setTimeout(() => {
-                    this.mostrarVerificacionPago(servicio);
-                  }, 10000); // 10 segundos
+      // Mostrar alerta con instrucciones
+      const instructionAlert = await this.alertController.create({
+        header: 'Pago en proceso',
+        message: 'Se ha abierto una ventana para procesar tu pago con PayPal. Una vez completado, cierra la ventana para continuar.',
+        buttons: [
+          {
+            text: 'Entendido',
+            handler: () => {
+              // Vigilar cierre de ventana para luego confirmar el pago
+              const checkClosed = setInterval(async () => {
+                if (paypalWindow.closed) {
+                  clearInterval(checkClosed);
+                  // Confirmar pago capturando la orden PayPal
+                  await this.confirmarPagoPayPal(paymentData.orderId, servicio.id!);
                 }
-              }
-            ]
-          });
-          await alert.present();
-        },
-        error: async (error) => {
-          await loading.dismiss();
-          console.error('Error al crear transacción:', error);
-          
-          const alert = await this.alertController.create({
-            header: 'Error',
-            message: 'No se pudo iniciar el proceso de pago. Verifica tu conexión e intenta nuevamente.',
-            buttons: ['OK']
-          });
-          await alert.present();
-        }
+              }, 1000);
+
+              // Timeout por seguridad (10 minutos)
+              setTimeout(() => {
+                if (!paypalWindow.closed) {
+                  clearInterval(checkClosed);
+                  paypalWindow.close();
+                  this.confirmarPagoPayPal(paymentData.orderId, servicio.id!);
+                }
+              }, 600000);
+            }
+          }
+        ]
       });
+      await instructionAlert.present();
 
     } catch (error) {
       await loading.dismiss();
       console.error('Error al procesar pago:', error);
-      
       const alert = await this.alertController.create({
-        header: 'Error',
-        message: 'Ocurrió un error al procesar el pago. Intenta nuevamente.',
+        header: 'Error de pago',
+        message: `No se pudo iniciar el proceso de pago: ${error}`,
         buttons: ['OK']
       });
       await alert.present();
     }
   }
 
-  private async mostrarVerificacionPago(servicio: ServicioConPrestador) {
-    const alert = await this.alertController.create({
-      header: '¿Completaste el pago?',
-      message: 'Si ya completaste el pago en Transbank, presiona "Verificar" para actualizar el estado del servicio.',
-      buttons: [
-        {
-          text: 'Aún no',
-          role: 'cancel'
-        },
-        {
-          text: 'Verificar',
-          handler: async () => {
-            await this.verificarEstadoPago(servicio);
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
-
-  private async verificarEstadoPago(servicio: ServicioConPrestador) {
+  private async confirmarPagoPayPal(orderId: string, servicioId: string) {
     const loading = await this.loadingController.create({
-      message: 'Verificando estado del pago...',
+      message: 'Confirmando pago en PayPal...',
       spinner: 'crescent'
     });
     await loading.present();
 
     try {
-      await this.cargarServicios();
+      const captureResponse = await this.paymentService.confirmPayment(orderId);
       await loading.dismiss();
 
-      const servicioActualizado = this.servicios.find(s => s.id === servicio.id);
-      
-      if (servicioActualizado && this.esEstado(servicioActualizado, 'pagado')) {
-        const alert = await this.alertController.create({
-          header: '¡Pago confirmado!',
-          message: 'Tu pago ha sido procesado exitosamente.',
-          buttons: ['OK']
-        });
-        await alert.present();
-      } else {
-        const alert = await this.alertController.create({
-          header: 'Pago pendiente',
-          message: 'El pago aún no se ha confirmado. Si ya pagaste, espera unos minutos y verifica nuevamente.',
-          buttons: [
-            { text: 'OK', role: 'cancel' },
-            {
-              text: 'Verificar de nuevo',
-              handler: () => {
-                setTimeout(() => {
-                  this.verificarEstadoPago(servicio);
-                }, 5000);
-              }
-            }
-          ]
-        });
-        await alert.present();
-      }
+      if (captureResponse.status === 'COMPLETED') {
+        // Actualizar estado del servicio como pagado en Firestore
+        const ref = doc(this.firestore, 'servicios', servicioId);
+        await updateDoc(ref, { estado: 'pagado' });
 
+        const toast = await this.toastController.create({
+          message: 'Pago realizado correctamente.',
+          duration: 3000,
+          color: 'success'
+        });
+        await toast.present();
+
+        // Recargar lista
+        await this.cargarServicios();
+
+      } else {
+        // Pago no completado
+        await this.mostrarErrorPago('El pago no se completó correctamente.');
+      }
     } catch (error) {
       await loading.dismiss();
-      console.error('Error al verificar pago:', error);
-      
-      const alert = await this.alertController.create({
-        header: 'Error',
-        message: 'No se pudo verificar el estado del pago. Intenta nuevamente.',
-        buttons: ['OK']
-      });
-      await alert.present();
+      console.error('Error confirmando pago:', error);
+      await this.mostrarErrorPago('Ocurrió un error al confirmar el pago.');
     }
+  }
+
+  private async mostrarErrorPago(mensaje: string) {
+    const alert = await this.alertController.create({
+      header: 'Error de pago',
+      message: mensaje,
+      buttons: ['OK']
+    });
+    await alert.present();
   }
 }
